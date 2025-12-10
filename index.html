@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0, user-scalable=yes">
+    <title>Los Terroristas del Burger King Chat</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Fix for iPhone notch */
+        @supports (padding: max(0px)) {
+            body {
+                padding-top: max(12px, env(safe-area-inset-top));
+                padding-bottom: max(12px, env(safe-area-inset-bottom));
+                padding-left: max(8px, env(safe-area-inset-left));
+                padding-right: max(8px, env(safe-area-inset-right));
+            }
+        }
+        
+        /* Prevent zoom on input focus (iOS) */
+        input, textarea, button, select {
+            font-size: 16px !important;
+        }
+        
+        /* Ensure proper touch feedback */
+        button, .user-item, .delete-btn, .edit-btn {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script>
+    // CONFIGURACIÓN FIREBASE - Actualiza con tu proyecto
+    const firebaseConfig = {
+  apiKey: "AIzaSyD6GVgWRzfILelrWn9oidmzTHEYzIUcNZw",
+  authDomain: "chat-3b95e.firebaseapp.com",
+  databaseURL: "https://chat-3b95e-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "chat-3b95e",
+    storageBucket: "chat-3b95e.appspot.com",
+  messagingSenderId: "359079143078",
+  appId: "1:359079143078:web:8e7a0f0f9796b1b171f667"
+};
+
+    // Inicializar Firebase (compat mode)
+    firebase.initializeApp(firebaseConfig);
+    window.fbDb = firebase.database();
+    console.log('Firebase initialized, db present:', !!window.fbDb);
+    // Prueba rápida de escritura para verificar permisos y conexión.
+    try {
+        if (window.fbDb) {
+            window.fbDb.ref('debug_test').set({ok: true, ts: Date.now()})
+            .then(() => console.log('Firebase write ok: debug_test set'))
+            .catch(err => console.error('Firebase write failed:', err));
+        }
+    } catch (e) {
+        console.error('Firebase test write error:', e);
+    }
+</script>
+
+
+<body>
+<h1>Los Terroristas del Burger King Chat</h1>
+
+<nav id="navBar" style="display:none;">
+    <span onclick="showSection('forumSection')">Foro</span>
+    <span onclick="showSection('privateChatSection')">Privados</span>
+    <span onclick="showSection('groupChatSection')">Grupos</span>
+    <span onclick="showSection('profileSection')">Perfil</span>
+    <span id="adminNav" onclick="showSection('adminSection')" style="display:none; background: #ed4245;">⚙️ Admin</span>
+    <span onclick="logout()">Cerrar Sesión</span>
+</nav>
+
+<!-- LOGIN -->
+<div id="loginSection" class="container">
+    <h2>Iniciar Sesión</h2>
+    <input id="username" type="text" placeholder="Usuario">
+    <input id="password" type="password" placeholder="Contraseña">
+    <button onclick="registerOrLogin()">Entrar</button>
+</div>
+
+<!-- PERFIL -->
+<div id="profileSection" class="container" style="display:none;">
+    <h2>Mi Perfil</h2>
+    <div style="display: flex; gap: 20px;">
+        <div>
+            <img id="profileImgPreview" class="profile-img" src="">
+            <h3 id="profileName"></h3>
+            <p id="roleText"></p>
+        </div>
+        <div style="flex: 1;">
+            <h3>Selecciona un avatar predeterminado:</h3>
+            <div id="avatarGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;"></div>
+            <h3 style="margin-top: 20px;">O sube tu propia foto:</h3>
+            <input type="file" id="profileImgInput" onchange="uploadProfilePhoto()">
+            
+            <!-- Preferencias de notificaciones -->
+            <div style="margin-top: 30px; padding: 15px; background: #333; border-radius: 8px;">
+                <h3>⚙️ Preferencias de Notificaciones</h3>
+                <label style="display: flex; align-items: center; gap: 10px; margin: 10px 0; cursor: pointer;">
+                    <input type="checkbox" id="soundToggle" onchange="toggleSound()" style="width: 18px; height: 18px;">
+                    <span>Habilitar sonidos</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; margin: 10px 0; cursor: pointer;">
+                    <input type="checkbox" id="notifToggle" onchange="toggleNotifications()" style="width: 18px; height: 18px;">
+                    <span>Habilitar notificaciones del navegador</span>
+                </label>
+                <button onclick="testNotification()" style="margin-top: 10px;">🔔 Probar Notificación</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FORO -->
+<div id="forumSection" class="container" style="display:none;">
+    <h2>Publicar mensaje</h2>
+    <div style="display: flex; gap: 10px; align-items: flex-start;">
+        <textarea id="forumMsg" rows="3" oninput="autoGrow(this)" placeholder="Escribe un mensaje..." style="flex: 1;"></textarea>
+        <button onclick="toggleEmojiPicker('forum')" title="Emojis">😊</button>
+    </div>
+    <div id="forumEmojiPicker" class="emoji-picker" style="display:none;"></div>
+    <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
+        <input type="file" id="postFileInput" style="flex:1; min-width:150px;">
+        <button onclick="addPost()" style="flex-shrink:0; min-height:44px;">Publicar</button>
+    </div>
+
+    <h2>Mensajes</h2>
+    <div id="posts"></div>
+</div>
+
+<!-- CHATS PRIVADOS -->
+<div id="privateChatSection" class="container" style="display:none;">
+    <h2>Chats Privados</h2>
+
+    <div class="chat-container">
+        <div class="user-list" id="userList"></div>
+
+        <div class="chat-window">
+            <h3 id="chatWith">Selecciona un usuario</h3>
+
+            <div class="chat-messages" id="chatMessages"></div>
+
+            <div class="typing-indicator" id="typingIndicator" style="display:none;">Escribiendo...</div>
+
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="file" id="fileInput" style="flex: 1; min-width:150px;">
+                <button onclick="toggleEmojiPicker('private')" title="Emojis" style="min-height:44px;">😊</button>
+            </div>
+            <div id="privateEmojiPicker" class="emoji-picker" style="display:none;"></div>
+            <textarea id="privateMsg" oninput="userTyping(); autoGrow(this)" placeholder="Escribe un mensaje..." style="margin-bottom:8px;"></textarea>
+            <button onclick="sendPrivateMessage()" style="width:100%; min-height:44px;">Enviar</button>
+        </div>
+    </div>
+</div>
+
+<!-- CHATS GRUPALES -->
+<div id="groupChatSection" class="container" style="display:none;">
+    <h2>Chats Grupales</h2>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+        <button onclick="createGroup()" style="flex: 1; min-width:140px; min-height:44px;">Crear Grupo</button>
+        <button onclick="addMemberToGroup()" style="background: #43b581; flex: 1; min-width:140px; min-height:44px;">Agregar Miembro</button>
+    </div>
+
+    <div class="chat-container">
+        <div class="user-list" id="groupList"></div>
+
+        <div class="chat-window">
+            <h3 id="groupName">Selecciona un grupo</h3>
+
+            <div class="chat-messages" id="groupMessages"></div>
+
+            <div class="typing-indicator" id="groupTypingIndicator" style="display:none;">Escribiendo...</div>
+
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="file" id="groupFileInput" style="flex: 1; min-width:150px;">
+                <button onclick="toggleEmojiPicker('group')" title="Emojis" style="min-height:44px;">😊</button>
+            </div>
+            <div id="groupEmojiPicker" class="emoji-picker" style="display:none;"></div>
+            <textarea id="groupMsg" oninput="userTypingGroup(); autoGrow(this)" placeholder="Escribe un mensaje..." style="margin-bottom:8px;"></textarea>
+            <button onclick="sendGroupMessage()" style="width:100%; min-height:44px;">Enviar</button>
+        </div>
+        
+        <!-- Panel de miembros del grupo (lado derecho) -->
+        <div id="groupMembersPanel" class="hidden">
+            <h4>👥 Miembros</h4>
+            <div id="groupMembersList"></div>
+        </div>
+    </div>
+</div>
+
+<!-- PANEL ADMINISTRADOR -->
+<div id="adminSection" class="container" style="display:none;">
+    <h2>⚙️ Panel de Administración</h2>
+    <button onclick="runFirebaseDiagnostics()" style="margin-bottom:10px;">Comprobar Firebase</button>
+    <div id="diagOutput" style="white-space:pre-wrap; color:#ddd; margin-top:8px;"></div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <!-- Gestión de Usuarios -->
+        <div class="admin-card">
+            <h3>Gestión de Usuarios</h3>
+            <div id="usersList" style="background: #2b2d31; padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto;"></div>
+            <button onclick="refreshAdminPanel()" style="width: 100%; margin-top: 10px;">Actualizar</button>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="admin-card">
+            <h3>Estadísticas</h3>
+            <p>Total de usuarios: <strong id="totalUsers">0</strong></p>
+            <p>Total de posts: <strong id="totalPosts">0</strong></p>
+            <p>Total de mensajes privados: <strong id="totalPrivateMessages">0</strong></p>
+            <p>Total de grupos: <strong id="totalGroups">0</strong></p>
+            <button onclick="refreshAdminPanel()" style="width: 100%; margin-top: 10px;">Actualizar</button>
+        </div>
+
+        <!-- Limpiar Base de Datos -->
+        <div class="admin-card">
+            <h3>Limpiar Datos</h3>
+            <p>Elimina todos los datos almacenados</p>
+            <button onclick="clearAllData()" style="background: #ed4245; width: 100%">Limpiar Todo</button>
+        </div>
+
+        <!-- Eliminar Mensajes -->
+        <div class="admin-card">
+            <h3>Eliminar Mensajes</h3>
+            <p>Elimina todos los mensajes del foro, chats privados y mensajes de grupos (no borra usuarios ni grupos)</p>
+            <button onclick="clearAllMessages()" style="background: #ed4245; width: 100%">Eliminar Todos los Mensajes</button>
+        </div>
+
+        <!-- Gestión de Grupos -->
+        <div class="admin-card">
+            <h3>Gestión de Grupos</h3>
+            <div id="groupsListAdmin" style="background: #2b2d31; padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto;"></div>
+            <button onclick="refreshAdminPanel()" style="width: 100%; margin-top: 10px;">Actualizar</button>
+        </div>
+
+        <!-- Registro de Moderación -->
+        <div class="admin-card">
+            <h3>Registro de Moderación</h3>
+            <div id="modLogList" style="background:#2b2d31;padding:10px;border-radius:5px;max-height:300px;overflow-y:auto;color:#ddd;font-size:13px;"></div>
+            <button onclick="clearModLog()" style="width:100%; margin-top:10px; background:#ed4245;">Borrar Registro</button>
+        </div>
+
+        <!-- Intentos fallidos de administrador -->
+        <div class="admin-card">
+            <h3>Intentos Fallidos (Admin)</h3>
+            <div id="failedAttemptsList" style="background:#2b2d31;padding:10px;border-radius:5px;max-height:300px;overflow-y:auto;color:#ddd;font-size:13px;"></div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+                <button onclick="renderFailedAdminAttempts()" style="flex:1;">Refrescar</button>
+                <button onclick="clearFailedAdminAttempts()" style="flex:1; background:#ed4245;">Borrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALES -->
+<!-- Modal de Alerta -->
+<div id="alertModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Aviso</h2>
+            <button class="modal-close" onclick="closeAlert()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="alertMessage"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-primary" onclick="closeAlert()">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div id="confirmModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Confirmación</h2>
+            <button class="modal-close" onclick="closeConfirm(false)">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-danger" onclick="closeConfirm(false)">Cancelar</button>
+            <button class="btn-primary" onclick="closeConfirm(true)">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Entrada de Texto -->
+<div id="promptModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Ingresa un valor</h2>
+            <button class="modal-close" onclick="closePrompt(null)">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="promptMessage"></p>
+            <input type="text" id="promptInput" placeholder="Ingresa un valor...">
+        </div>
+        <div class="modal-footer">
+            <button class="btn-danger" onclick="closePrompt(null)">Cancelar</button>
+            <button class="btn-primary" onclick="confirmPrompt()">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Selección Grupo Privado/Público -->
+<div id="groupPrivacyModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Crear Grupo</h2>
+            <button class="modal-close" onclick="closeGroupPrivacy(null)">✕</button>
+        </div>
+        <div class="modal-body">
+            <p>¿Deseas que sea privado o público?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-primary" onclick="closeGroupPrivacy('public')" style="background: #43b581;">🌐 Público</button>
+            <button class="btn-primary" onclick="closeGroupPrivacy('private')" style="background: #7289da;">🔒 Privado</button>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay para modales -->
+<div id="modalOverlay" class="modal-overlay" style="display:none;" onclick="closeAllModals()"></div>
+
+<script src="script.js"></script>
+<script>
+function runFirebaseDiagnostics(){
+    const outEl = document.getElementById('diagOutput');
+    function out(msg){
+        console.log(msg);
+        if(outEl) outEl.innerText += msg + "\n";
+    }
+    if(outEl) outEl.innerText = '';
+    out('Iniciando diagnóstico de Firebase...');
+    if(!window.fbDb){ out('ERROR: Firebase DB no inicializada (window.fbDb false)'); return; }
+
+    // Leer debug_test
+    window.fbDb.ref('debug_test').once('value')
+    .then(snap => out('debug_test: ' + JSON.stringify(snap.val())))
+    .catch(err => out('Lectura debug_test falló: ' + err));
+
+    // Leer posts (contar entradas si existen)
+    window.fbDb.ref('posts').once('value')
+    .then(snap => {
+        const val = snap.val() || {};
+        const count = (typeof val === 'object') ? Object.keys(val).length : 0;
+        out('Posts count: ' + count);
+    })
+    .catch(err => out('Lectura posts falló: ' + err));
+
+    // Escritura de diagnóstico temporal
+    const path = 'diag_writes/' + Date.now();
+    window.fbDb.ref(path).set({ok:true, ts: Date.now()})
+    .then(() => out('Escritura de diagnóstico OK en: ' + path))
+    .catch(err => out('Escritura de diagnóstico falló: ' + err));
+}
+</script>
+</body>
+</html>
