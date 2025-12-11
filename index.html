@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0, user-scalable=yes">
+    <title>Los Terroristas del Burger King Chat</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Fix for iPhone notch */
+        @supports (padding: max(0px)) {
+            body {
+                padding-top: max(12px, env(safe-area-inset-top));
+                padding-bottom: max(12px, env(safe-area-inset-bottom));
+                padding-left: max(8px, env(safe-area-inset-left));
+                padding-right: max(8px, env(safe-area-inset-right));
+            }
+        }
+        
+        /* Prevent zoom on input focus (iOS) */
+        input, textarea, button, select {
+            font-size: 16px !important;
+        }
+        
+        /* Ensure proper touch feedback */
+        button, .user-item, .delete-btn, .edit-btn {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Mobile-specific responsive styles */
+        @media (max-width: 768px) {
+            html[data-device="mobile"] body {
+                font-size: 14px;
+                overflow-x: hidden;
+            }
+
+            /* Sticky navbar on mobile */
+            html[data-device="mobile"] nav {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+                padding: 8px;
+                font-size: 11px;
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+                background: linear-gradient(90deg, var(--accent-2), var(--accent));
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            }
+
+            html[data-device="mobile"] nav span {
+                padding: 10px 8px;
+                flex: 1 1 auto;
+                min-width: 70px;
+                text-align: center;
+                cursor: pointer;
+                border-radius: 6px;
+                transition: all 0.2s ease;
+                user-select: none;
+                -webkit-user-select: none;
+                -webkit-touch-callout: none;
+            }
+
+            html[data-device="mobile"] nav span:active {
+                transform: scale(0.95);
+                opacity: 0.8;
+            }
+
+            html[data-device="mobile"] .container {
+                padding: 12px;
+                margin: 0;
+                width: 100%;
+                max-width: none;
+                border-radius: 0;
+            }
+
+            html[data-device="mobile"] h1 {
+                font-size: 18px;
+                margin: 8px 0;
+                padding: 0 12px;
+            }
+
+            html[data-device="mobile"] h2 {
+                font-size: 16px;
+                margin: 10px 0 6px 0;
+            }
+
+            html[data-device="mobile"] h3 {
+                font-size: 14px;
+                margin: 6px 0;
+            }
+
+            html[data-device="mobile"] button {
+                padding: 12px 14px;
+                font-size: 14px;
+                min-height: 48px;
+                border-radius: 8px;
+                transition: all 0.2s ease;
+                -webkit-tap-highlight-color: transparent;
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            html[data-device="mobile"] button:active {
+                transform: scale(0.98);
+                opacity: 0.9;
+            }
+
+            html[data-device="mobile"] input[type="text"],
+            html[data-device="mobile"] input[type="password"],
+            html[data-device="mobile"] input[type="email"],
+            html[data-device="mobile"] textarea,
+            html[data-device="mobile"] select {
+                padding: 12px;
+                font-size: 16px !important;
+                width: 100%;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                background: var(--surface);
+                color: var(--text);
+                margin-bottom: 8px;
+                -webkit-appearance: none;
+                appearance: none;
+            }
+
+            html[data-device="mobile"] input[type="text"]:focus,
+            html[data-device="mobile"] input[type="password"]:focus,
+            html[data-device="mobile"] textarea:focus {
+                outline: none;
+                border-color: var(--accent);
+                background: var(--panel-2);
+                box-shadow: 0 0 0 3px rgba(42, 211, 182, 0.1);
+            }
+
+            html[data-device="mobile"] .user-item {
+                padding: 14px;
+                font-size: 14px;
+                margin-bottom: 8px;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                -webkit-user-select: none;
+                user-select: none;
+            }
+
+            html[data-device="mobile"] .user-item:active {
+                transform: scale(0.98);
+                background: var(--muted);
+            }
+
+            html[data-device="mobile"] .chat-container {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                height: calc(100vh - 280px);
+            }
+
+            html[data-device="mobile"] .user-list {
+                width: 100% !important;
+                max-height: 150px;
+                overflow-y: auto;
+                border-radius: 8px;
+                padding: 8px 0;
+                margin-bottom: 8px;
+            }
+
+            html[data-device="mobile"] .chat-window {
+                width: 100% !important;
+                display: flex;
+                flex-direction: column;
+                flex: 1;
+            }
+
+            html[data-device="mobile"] .chat-messages,
+            html[data-device="mobile"] #groupMessages {
+                flex: 1;
+                overflow-y: auto;
+                margin-bottom: 8px;
+                scroll-behavior: smooth;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            html[data-device="mobile"] .typing-indicator {
+                font-size: 12px;
+                padding: 8px 12px;
+                color: var(--muted-text);
+                margin-bottom: 4px;
+            }
+
+            html[data-device="mobile"] textarea {
+                height: 70px !important;
+                font-size: 14px;
+                resize: vertical;
+                max-height: 120px;
+            }
+
+                /* Small pulse animation for nav badges when new messages arrive */
+                .nav-badge.badge-pulse {
+                    animation: badge-pulse 900ms ease-out;
+                }
+                @keyframes badge-pulse {
+                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(240,71,71,0.8); }
+                    40% { transform: scale(1.12); box-shadow: 0 0 10px 6px rgba(240,71,71,0.12); }
+                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(240,71,71,0); }
+                }
+
+            html[data-device="mobile"] .post,
+            html[data-device="mobile"] .msg-bubble {
+                padding: 10px;
+                margin-bottom: 8px;
+                border-radius: 8px;
+                word-break: break-word;
+                -webkit-user-select: text;
+                user-select: text;
+            }
+
+            html[data-device="mobile"] .msg-bubble img,
+            html[data-device="mobile"] .post img {
+                max-width: 100%;
+                height: auto;
+                border-radius: 6px;
+            }
+
+            html[data-device="mobile"] .profile-img {
+                width: 28px !important;
+                height: 28px !important;
+            }
+
+            html[data-device="mobile"] .delete-btn,
+            html[data-device="mobile"] .edit-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+                min-height: auto;
+                margin: 0 2px;
+            }
+        }
+
+        /* Extra small screens (< 480px) */
+        @media (max-width: 480px) {
+            html[data-device="mobile"] nav span {
+                min-width: 55px;
+                padding: 8px 6px;
+                font-size: 10px;
+                flex: 1 1 auto;
+            }
+
+            html[data-device="mobile"] button {
+                padding: 10px 12px;
+                font-size: 13px;
+                min-height: 44px;
+            }
+
+            html[data-device="mobile"] textarea {
+                height: 60px !important;
+                font-size: 13px;
+            }
+
+            html[data-device="mobile"] h1 {
+                font-size: 16px;
+            }
+
+            html[data-device="mobile"] h2 {
+                font-size: 14px;
+            }
+
+            html[data-device="mobile"] .container {
+                padding: 8px;
+            }
+
+            html[data-device="mobile"] .chat-container {
+                height: calc(100vh - 250px);
+            }
+
+            html[data-device="mobile"] input,
+            html[data-device="mobile"] textarea {
+                font-size: 16px !important;
+            }
+        }
+
+        /* Landscape mode adjustments */
+        @media (max-height: 500px) and (max-width: 768px) {
+            html[data-device="mobile"] .chat-container {
+                height: calc(100vh - 200px);
+            }
+
+            html[data-device="mobile"] textarea {
+                height: 50px !important;
+            }
+
+            html[data-device="mobile"] nav {
+                padding: 6px 4px;
+                gap: 2px;
+            }
+
+            html[data-device="mobile"] nav span {
+                padding: 6px 4px;
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script>
+    // CONFIGURACIÓN FIREBASE
+    const firebaseConfig = {
+  apiKey: "AIzaSyD6GVgWRzfILelrWn9oidmzTHEYzIUcNZw",
+  authDomain: "chat-3b95e.firebaseapp.com",
+  databaseURL: "https://chat-3b95e-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "chat-3b95e",
+    storageBucket: "chat-3b95e.appspot.com",
+  messagingSenderId: "359079143078",
+  appId: "1:359079143078:web:8e7a0f0f9796b1b171f667"
+};
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    window.fbDb = firebase.database();
+    console.log('Firebase initialized, db present:', !!window.fbDb);
+    // Prueba de escritura para verificar permisos y conexión.
+    try {
+        if (window.fbDb) {
+            window.fbDb.ref('debug_test').set({ok: true, ts: Date.now()})
+            .then(() => console.log('Firebase write ok: debug_test set'))
+            .catch(err => console.error('Firebase write failed:', err));
+        }
+    } catch (e) {
+        console.error('Firebase test write error:', e);
+    }
+</script>
+
+
+<body>
+<h1>🍔 Los Terroristas del Burger King 🍔</h1>
+
+<nav id="navBar" style="display:none;">
+    <span id="navForum" onclick="showSection('forumSection')">Foro <span class="nav-badge" id="navBadgeForum" style="display:none;background:#f04747;color:#fff;border-radius:50%;padding:2px 6px;font-size:12px;margin-left:6px;">0</span></span>
+    <span id="navPriv" onclick="showSection('privateChatSection')">Privados <span class="nav-badge" id="navBadgePriv" style="display:none;background:#f04747;color:#fff;border-radius:50%;padding:2px 6px;font-size:12px;margin-left:6px;">0</span></span>
+    <span id="navGroups" onclick="showSection('groupChatSection')">Grupos <span class="nav-badge" id="navBadgeGroups" style="display:none;background:#f04747;color:#fff;border-radius:50%;padding:2px 6px;font-size:12px;margin-left:6px;">0</span></span>
+    <span onclick="showSection('profileSection')">Perfil</span>
+    <span onclick="showSection('settingsSection')">⚙️ Ajustes</span>
+    <span onclick="showSection('supportSection')">💬 Soporte</span>
+    <span id="adminNav" onclick="showSection('adminSection')" style="display:none; background: #ed4245;">⚙️ Admin</span>
+    <span onclick="logout()">Cerrar Sesión</span>
+</nav>
+
+<!-- LOGIN -->
+<div id="loginSection" class="container">
+    <h2>Iniciar Sesión</h2>
+    <input id="username" type="text" placeholder="Usuario">
+    <input id="password" type="password" placeholder="Contraseña">
+    <button onclick="registerOrLogin()">Entrar</button>
+</div>
+
+<!-- PERFIL -->
+<div id="profileSection" class="container" style="display:none;">
+    <h2>Mi Perfil</h2>
+    <div style="display: flex; gap: 20px;">
+        <div>
+            <img id="profileImgPreview" class="profile-img" src="">
+            <h3 id="profileName"></h3>
+            <p id="roleText"></p>
+        </div>
+        <div style="flex: 1;">
+            <h3>Biografía:</h3>
+            <textarea id="profileBio" placeholder="Escribe una breve biografía..." style="width:100%; height:80px; margin-bottom:15px;"></textarea>
+            <button onclick="saveBiography()" style="margin-bottom:15px;">Guardar Biografía</button>
+            
+            <h3>Selecciona un avatar predeterminado:</h3>
+            <div id="avatarGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;"></div>
+            <h3 style="margin-top: 20px;">O sube tu propia foto:</h3>
+            <input type="file" id="profileImgInput" onchange="uploadProfilePhoto()">
+        </div>
+    </div>
+</div>
+
+<!-- FORO -->
+<div id="forumSection" class="container" style="display:none;">
+    <h2>Publicar mensaje</h2>
+    <div style="display: flex; gap: 10px; align-items: flex-start;">
+        <textarea id="forumMsg" rows="3" oninput="autoGrow(this); forumUserTyping()" onkeydown="handleTabKey(event)" placeholder="Escribe un mensaje..." style="flex: 1;"></textarea>
+        <button onclick="toggleEmojiPicker('forum')" title="Emojis">😊</button>
+    </div>
+    <div id="forumEmojiPicker" class="emoji-picker" style="display:none;"></div>
+    <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
+        <input type="file" id="postFileInput" style="flex:1; min-width:150px;">
+        <button onclick="addPost()" style="flex-shrink:0; min-height:44px;">Publicar</button>
+    </div>
+
+    <div style="display: flex; gap: 16px; margin-top: 20px;">
+        <div style="flex: 1;">
+            <h2 style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                Mensajes
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <label for="postSort" style="font-size: 14px; color: var(--muted-text);">Ordenar:</label>
+                    <select id="postSort" onchange="changePostSort(this.value)" style="padding: 6px 10px; background: var(--muted); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px;">
+                        <option value="recent">Recientes</option>
+                        <option value="oldest">Más antiguos</option>
+                        <option value="popular">Más populares</option>
+                        <option value="replies">Más respuestas</option>
+                    </select>
+                </div>
+            </h2>
+            <div style="margin-bottom: 12px;">
+                <input type="text" id="forumSearch" placeholder="🔍 Buscar mensajes..." oninput="filterForumPosts(this.value)" style="width: 100%; padding: 8px 12px; background: var(--muted); color: var(--text); border: 1px solid var(--border); border-radius: 6px; font-size: 13px;">
+            </div>
+            
+            <div id="pinnedPostsSection" style="margin-bottom: 20px; padding: 12px; background: var(--surface); border-radius: 8px; border-left: 4px solid var(--accent); display: none;">
+                <h3 style="margin: 0 0 12px 0; color: var(--accent);">📌 Mensajes Fijados</h3>
+                <div id="pinnedPosts" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+            <div class="typing-indicator" id="forumTypingIndicator" style="display:none;">Escribiendo...</div>
+            <div id="posts"></div>
+        </div>
+        
+        <div style="width: 250px; flex-shrink: 0;">
+            <h3 style="margin: 0 0 12px 0; font-size: 14px;">👥 Usuarios</h3>
+            <div id="forumUsersList" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- CHATS PRIVADOS -->
+<div id="privateChatSection" class="container" style="display:none;">
+    <h2>Chats Privados</h2>
+    <div style="margin-bottom: 12px;">
+        <input type="text" id="privateSearch" placeholder="🔍 Buscar chats o mensajes..." oninput="filterPrivateMessages(this.value)" style="width: 100%; padding: 8px 12px; background: var(--muted); color: var(--text); border: 1px solid var(--border); border-radius: 6px; font-size: 13px;">
+    </div>
+
+    <div class="chat-container">
+        <div class="user-list" id="userList"></div>
+
+        <div class="chat-window">
+            <h3 id="chatWith">Selecciona un usuario</h3>
+
+            <div class="chat-messages" id="chatMessages"></div>
+
+            <div class="typing-indicator" id="typingIndicator" style="display:none;">Escribiendo...</div>
+
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="file" id="fileInput" style="flex: 1; min-width:150px;">
+                <button onclick="toggleEmojiPicker('private')" title="Emojis" style="min-height:44px;">😊</button>
+            </div>
+            <div id="privateEmojiPicker" class="emoji-picker" style="display:none;"></div>
+            <textarea id="privateMsg" oninput="userTyping(); autoGrow(this)" onkeydown="handleTabKey(event)" placeholder="Escribe un mensaje..."></textarea>
+            <button onclick="sendPrivateMessage()" style="width:100%; min-height:44px;">Enviar</button>
+        </div>
+    </div>
+</div>
+
+<!-- CHATS GRUPALES -->
+<div id="groupChatSection" class="container" style="display:none;">
+    <h2>Chats Grupales</h2>
+    <div style="margin-bottom: 12px;">
+        <input type="text" id="groupSearch" placeholder="🔍 Buscar grupos o mensajes..." oninput="filterGroupMessages(this.value)" style="width: 100%; padding: 8px 12px; background: var(--muted); color: var(--text); border: 1px solid var(--border); border-radius: 6px; font-size: 13px;">
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+        <button onclick="createGroup()" style="flex: 1; min-width:140px; min-height:44px;">Crear Grupo</button>
+        <button onclick="addMemberToGroup()" style="background: #43b581; flex: 1; min-width:140px; min-height:44px;">Agregar Miembro</button>
+    </div>
+
+    <div class="chat-container">
+        <div class="user-list" id="groupList"></div>
+
+        <div class="chat-window">
+            <h3 id="groupName">Selecciona un grupo</h3>
+
+            <div class="chat-messages" id="groupMessages"></div>
+
+            <div class="typing-indicator" id="groupTypingIndicator" style="display:none;">Escribiendo...</div>
+
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="file" id="groupFileInput" style="flex: 1; min-width:150px;">
+                <button onclick="toggleEmojiPicker('group')" title="Emojis" style="min-height:44px;">😊</button>
+            </div>
+            <div id="groupEmojiPicker" class="emoji-picker" style="display:none;"></div>
+            <textarea id="groupMsg" oninput="userTypingGroup(); autoGrow(this)" onkeydown="handleTabKey(event)" placeholder="Escribe un mensaje..." style="margin-bottom:8px;"></textarea>
+            <button onclick="sendGroupMessage()" style="width:100%; min-height:44px;">Enviar</button>
+        </div>
+        
+        <!-- Panel de miembros del grupo (lado derecho) -->
+        <div id="groupMembersPanel" class="hidden">
+            <h4>👥 Miembros</h4>
+            <div id="groupMembersList"></div>
+        </div>
+    </div>
+</div>
+
+<!-- PANEL ADMINISTRADOR -->
+<div id="adminSection" class="container" style="display:none;">
+    <h2>⚙️ Panel de Administración</h2>
+    <button onclick="runFirebaseDiagnostics()" style="margin-bottom:10px;">Comprobar Firebase</button>
+    <div id="diagOutput" style="white-space:pre-wrap; color:#ddd; margin-top:8px;"></div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <!-- Gestión de Usuarios -->
+        <div class="admin-card">
+            <h3>Gestión de Usuarios</h3>
+            <div id="usersList" style="background: #2b2d31; padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto;"></div>
+            <button onclick="refreshAdminPanel()" style="width: 100%; margin-top: 10px;">Actualizar</button>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="admin-card">
+            <h3>Estadísticas</h3>
+            <p>Total de usuarios: <strong id="totalUsers">0</strong></p>
+            <p>Total de posts: <strong id="totalPosts">0</strong></p>
+            <p>Total de mensajes privados: <strong id="totalPrivateMessages">0</strong></p>
+            <p>Total de grupos: <strong id="totalGroups">0</strong></p>
+            <button onclick="refreshAdminPanel()" style="width: 100%; margin-top: 10px;">Actualizar</button>
+        </div>
+
+        <!-- Limpiar Base de Datos -->
+        <div class="admin-card">
+            <h3>Limpiar Datos</h3>
+            <p>Elimina todos los datos almacenados</p>
+            <button onclick="clearAllData()" style="background: #ed4245; width: 100%">Limpiar Todo</button>
+        </div>
+
+        <!-- Eliminar Mensajes -->
+        <div class="admin-card">
+            <h3>Eliminar Mensajes</h3>
+            <p>Elimina todos los mensajes del foro, chats privados y mensajes de grupos (no borra usuarios ni grupos)</p>
+            <button onclick="clearAllMessages()" style="background: #ed4245; width: 100%">Eliminar Todos los Mensajes</button>
+        </div>
+
+        <!-- Gestión de Grupos -->
+        <div class="admin-card">
+            <h3>Gestión de Grupos</h3>
+            <div id="groupsListAdmin" style="background: #2b2d31; padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto;"></div>
+            <button onclick="refreshAdminPanel()" style="width: 100%; margin-top: 10px;">Actualizar</button>
+        </div>
+
+        <!-- Registro de Moderación -->
+        <div class="admin-card">
+            <h3>Registro de Moderación</h3>
+            <div id="modLogList" style="background:#2b2d31;padding:10px;border-radius:5px;max-height:300px;overflow-y:auto;color:#ddd;font-size:13px;"></div>
+            <button onclick="clearModLog()" style="width:100%; margin-top:10px; background:#ed4245;">Borrar Registro</button>
+        </div>
+
+        <!-- Intentos fallidos de administrador -->
+        <div class="admin-card">
+            <h3>Intentos Fallidos (Admin)</h3>
+            <div id="failedAttemptsList" style="background:#2b2d31;padding:10px;border-radius:5px;max-height:300px;overflow-y:auto;color:#ddd;font-size:13px;"></div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+                <button onclick="renderFailedAdminAttempts()" style="flex:1;">Refrescar</button>
+                <button onclick="clearFailedAdminAttempts()" style="flex:1; background:#ed4245;">Borrar</button>
+            </div>
+        </div>
+
+        <!-- Mensajes de Soporte -->
+        <div class="admin-card">
+            <h3>💬 Mensajes de Soporte</h3>
+            <div id="adminSupportList" style="background:#2b2d31;padding:10px;border-radius:5px;max-height:300px;overflow-y:auto;color:#ddd;font-size:13px;"></div>
+            <button onclick="loadAdminSupportPanel()" style="width:100%; margin-top:10px;">Refrescar</button>
+        </div>
+        </div>
+    </div>
+</div>
+
+<!-- AJUSTES -->
+<div id="settingsSection" class="container" style="display:none;">
+    <h2>⚙️ Ajustes</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+        
+        <!-- Notificaciones -->
+        <div style="padding: 20px; background: var(--muted); border-radius: 8px;">
+            <h3>🔔 Notificaciones</h3>
+            <label style="display: flex; align-items: center; gap: 10px; margin: 15px 0; cursor: pointer;">
+                <input type="checkbox" id="soundToggle" onchange="toggleSound()" style="width: 18px; height: 18px;">
+                <span>Reproducir sonidos</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px; margin: 15px 0; cursor: pointer;">
+                <input type="checkbox" id="notifToggle" onchange="toggleNotifications()" style="width: 18px; height: 18px;">
+                <span>Notificaciones del navegador</span>
+            </label>
+            <button onclick="testNotification()" style="width: 100%; margin-top: 10px;">🔔 Probar Notificación</button>
+        </div>
+        
+        <!-- Seguridad -->
+        <div style="padding: 20px; background: var(--muted); border-radius: 8px;">
+            <h3>🔐 Seguridad</h3>
+            <div style="margin: 15px 0;">
+                <label>Nueva contraseña:</label>
+                <input type="password" id="newPassword" placeholder="Escribe tu nueva contraseña" style="width: 100%; padding: 8px; margin: 8px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                <label>Confirmar contraseña:</label>
+                <input type="password" id="confirmPassword" placeholder="Confirma tu contraseña" style="width: 100%; padding: 8px; margin: 8px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                <button onclick="changePassword()" style="width: 100%; margin-top: 10px;">Cambiar Contraseña</button>
+            </div>
+        </div>
+        
+        <!-- Apariencia -->
+        <div style="padding: 20px; background: var(--muted); border-radius: 8px;">
+            <h3>🎨 Apariencia</h3>
+            <label style="display: flex; align-items: center; gap: 10px; margin: 15px 0; cursor: pointer;">
+                <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()" style="width: 18px; height: 18px;" checked>
+                <span>Modo oscuro</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px; margin: 15px 0; cursor: pointer;">
+                <span>Tamaño de fuente:</span>
+                <select id="fontSizeSelect" onchange="changeFontSize(this.value)" style="padding: 6px 10px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 4px; cursor: pointer;">
+                    <option value="small">Pequeña (14px)</option>
+                    <option value="normal" selected>Normal (16px)</option>
+                    <option value="large">Grande (18px)</option>
+                    <option value="xlarge">Extra Grande (20px)</option>
+                </select>
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px; margin: 15px 0; cursor: pointer;">
+                <span>Espaciado de líneas:</span>
+                <select id="lineHeightSelect" onchange="changeLineHeight(this.value)" style="padding: 6px 10px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 4px; cursor: pointer;">
+                    <option value="compact">Compacto (1.2)</option>
+                    <option value="normal" selected>Normal (1.5)</option>
+                    <option value="comfortable">Cómodo (1.8)</option>
+                    <option value="spacious">Espacioso (2.0)</option>
+                </select>
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px; margin: 15px 0; cursor: pointer;">
+                <span>Contraste:</span>
+                <select id="contrastSelect" onchange="changeContrast(this.value)" style="padding: 6px 10px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 4px; cursor: pointer;">
+                    <option value="normal" selected>Normal</option>
+                    <option value="high">Alto</option>
+                    <option value="low">Bajo</option>
+                </select>
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px; margin: 15px 0; cursor: pointer;">
+                <span>Ancho máximo:</span>
+                <select id="maxWidthSelect" onchange="changeMaxWidth(this.value)" style="padding: 6px 10px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 4px; cursor: pointer;">
+                    <option value="full" selected>Pantalla completa</option>
+                    <option value="limited">Ancho limitado</option>
+                    <option value="narrow">Estrecho</option>
+                </select>
+            </label>
+        </div>
+        
+        <!-- Información -->
+        <div style="padding: 20px; background: var(--muted); border-radius: 8px;">
+            <h3>ℹ️ Información</h3>
+            <p><strong>Versión:</strong> 1.0.0</p>
+            <p><strong>Última actualización:</strong> <span id="lastUpdate">Diciembre 2024</span></p>
+            <p><strong>Almacenamiento usado:</strong> <span id="storageUsed">Calculando...</span></p>
+        </div>
+        
+        <!-- Ayuda y Soporte -->
+        <div style="padding: 20px; background: var(--muted); border-radius: 8px;">
+            <h3>❓ Ayuda</h3>
+            <button onclick="showSection('supportSection')" style="width: 100%; margin-bottom: 10px;">📞 Contactar Soporte</button>
+        </div>
+        
+    </div>
+</div>
+
+<!-- SOPORTE -->
+<div id="supportSection" class="container" style="display:none;">
+    <h2>💬 Centro de Soporte</h2>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        
+        <!-- Chat con Admin -->
+        <div style="padding: 20px; background: var(--muted); border-radius: 8px; display: flex; flex-direction: column; min-height: 500px;">
+            <h3>💬 Chat con Administrador</h3>
+            <p style="color: var(--muted-text); font-size: 13px; margin-bottom: 10px;">Escribe tu mensaje y el administrador lo verá en el panel de soporte.</p>
+            
+            <div id="supportChatMessages" style="flex: 1; overflow-y: auto; background: var(--surface); border-radius: 6px; padding: 12px; margin-bottom: 12px; min-height: 200px;"></div>
+            
+            <textarea id="supportMessage" placeholder="Describe tu problema o pregunta..." style="width: 100%; padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text); margin-bottom: 10px; resize: vertical; min-height: 80px;"></textarea>
+            <button onclick="sendSupportMessage()" style="width: 100%; padding: 10px; background: var(--accent); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Enviar Mensaje</button>
+        </div>
+        
+        <!-- FAQ y Ayuda -->
+        <div style="padding: 20px; background: var(--muted); border-radius: 8px; overflow-y: auto;">
+            <h3>❓ Preguntas Frecuentes</h3>
+            
+            <div style="margin-bottom: 15px; padding: 12px; background: var(--surface); border-radius: 6px;">
+                <h4 style="margin: 0 0 8px 0; cursor: pointer;" onclick="toggleFAQ(this)">▶ ¿Cómo cambio mi contraseña?</h4>
+                <p style="display: none; margin: 8px 0 0 0; color: var(--muted-text); font-size: 13px;">Ve a la sección de Ajustes, busca "Seguridad" e ingresa tu nueva contraseña. Debes confirmarla para cambiarla.</p>
+            </div>
+            
+            <div style="margin-bottom: 15px; padding: 12px; background: var(--surface); border-radius: 6px;">
+                <h4 style="margin: 0 0 8px 0; cursor: pointer;" onclick="toggleFAQ(this)">▶ ¿Cómo creo un grupo?</h4>
+                <p style="display: none; margin: 8px 0 0 0; color: var(--muted-text); font-size: 13px;">En la sección de Grupos, haz clic en "Crear Grupo". Elige si será público o privado. Los grupos públicos pueden ser unidos por cualquiera, mientras que los privados requieren invitación.</p>
+            </div>
+            
+            <div style="margin-bottom: 15px; padding: 12px; background: var(--surface); border-radius: 6px;">
+                <h4 style="margin: 0 0 8px 0; cursor: pointer;" onclick="toggleFAQ(this)">▶ ¿Cómo uso emojis?</h4>
+                <p style="display: none; margin: 8px 0 0 0; color: var(--muted-text); font-size: 13px;">Haz clic en el botón 😊 junto al campo de texto para abrir el selector de emojis. También puedes escribir emojis directamente si tu teclado lo permite.</p>
+            </div>
+            
+            <div style="margin-bottom: 15px; padding: 12px; background: var(--surface); border-radius: 6px;">
+                <h4 style="margin: 0 0 8px 0; cursor: pointer;" onclick="toggleFAQ(this)">▶ ¿Mi mensaje desapareció después de recargár?</h4>
+                <p style="display: none; margin: 8px 0 0 0; color: var(--muted-text); font-size: 13px;">Si escribías un mensaje cuando recargaste la página, debería haber sido restaurado automáticamente. Si no, intenta escribirlo de nuevo. Todos los mensajes se guardan automáticamente.</p>
+            </div>
+            
+            <div style="margin-bottom: 15px; padding: 12px; background: var(--surface); border-radius: 6px;">
+                <h4 style="margin: 0 0 8px 0; cursor: pointer;" onclick="toggleFAQ(this)">▶ ¿Qué significa el indicador verde/rojo?</h4>
+                <p style="display: none; margin: 8px 0 0 0; color: var(--muted-text); font-size: 13px;">El indicador verde significa que el usuario está en línea ahora. El rojo significa que no ha estado activo en los últimos 2 minutos.</p>
+            </div>
+            
+            <div style="margin-bottom: 15px; padding: 12px; background: var(--surface); border-radius: 6px;">
+                <h4 style="margin: 0 0 8px 0; cursor: pointer;" onclick="toggleFAQ(this)">▶ ¿Cómo elimino mi cuenta?</h4>
+                <p style="display: none; margin: 8px 0 0 0; color: var(--muted-text); font-size: 13px;">Contacta al administrador a través del chat de soporte. Los administradores pueden eliminar cuentas. Cuando se elimina una cuenta, todos sus datos asociados se borran.</p>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 12px; background: var(--surface); border-radius: 6px; border-left: 4px solid var(--accent);">
+                <p style="margin: 0; color: var(--muted-text); font-size: 13px;"><strong>¿No encontraste respuesta?</strong> Usa el formulario de chat de la izquierda para contactar directamente al administrador.</p>
+            </div>
+        </div>
+        
+    </div>
+</div>
+<!-- Modal de Alerta -->
+<div id="alertModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Aviso</h2>
+            <button class="modal-close" onclick="closeAlert()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="alertMessage"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-primary" onclick="closeAlert()">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div id="confirmModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Confirmación</h2>
+            <button class="modal-close" onclick="closeConfirm(false)">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-danger" onclick="closeConfirm(false)">Cancelar</button>
+            <button class="btn-primary" onclick="closeConfirm(true)">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Entrada de Texto -->
+<div id="promptModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Ingresa un valor</h2>
+            <button class="modal-close" onclick="closePrompt(null)">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="promptMessage"></p>
+            <input type="text" id="promptInput" placeholder="Ingresa un valor...">
+        </div>
+        <div class="modal-footer">
+            <button class="btn-danger" onclick="closePrompt(null)">Cancelar</button>
+            <button class="btn-primary" onclick="confirmPrompt()">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Selección Grupo Privado/Público -->
+<div id="groupPrivacyModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Crear Grupo</h2>
+            <button class="modal-close" onclick="closeGroupPrivacy(null)">✕</button>
+        </div>
+        <div class="modal-body">
+            <p>¿Deseas que sea privado o público?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-primary" onclick="closeGroupPrivacy('public')" style="background: #43b581;">🌐 Público</button>
+            <button class="btn-primary" onclick="closeGroupPrivacy('private')" style="background: #7289da;">🔒 Privado</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de perfil de usuario -->
+<div id="userProfileModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Perfil de Usuario</h2>
+            <button class="modal-close" onclick="closeModal('userProfileModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div style="display: flex; gap: 20px; align-items: flex-start;">
+                <img id="userProfileAvatar" class="profile-img" src="" style="width: 100px; height: 100px;">
+                <div style="flex: 1;">
+                    <h3 id="userProfileName" style="margin-top: 0;"></h3>
+                    <p id="userProfileRole" style="color: var(--muted-text); margin: 5px 0;"></p>
+                    <p id="userProfileCreated" style="color: var(--muted-text); font-size: 12px; margin: 5px 0;"></p>
+                    <hr style="border: none; border-top: 1px solid var(--border); margin: 10px 0;">
+                    <h4>Biografía:</h4>
+                    <p id="userProfileBio" style="color: var(--text); line-height: 1.5; white-space: pre-wrap;"></p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-primary" onclick="closeModal('userProfileModal')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de zoom para fotos -->
+<div id="photoZoomModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 90%; max-height: 90%; display: flex; flex-direction: column; padding: 20px;">
+        <div class="modal-header" style="margin-bottom: 10px;">
+            <h2>Foto</h2>
+            <button class="modal-close" onclick="closeModal('photoZoomModal')">✕</button>
+        </div>
+        <div class="modal-body" style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto;">
+            <img id="zoomedPhoto" src="" style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-out;" onclick="closeModal('photoZoomModal')">
+        </div>
+    </div>
+</div>
+
+<!-- Overlay para modales -->
+<div id="modalOverlay" class="modal-overlay" style="display:none;" onclick="closeAllModals()"></div>
+
+<!-- Version Display -->
+<div style="position: fixed; bottom: 15px; right: 15px; font-size: 11px; color: #888; background: #2b2d31; padding: 8px 12px; border-radius: 4px; font-family: monospace; border: 1px solid #555; z-index: 10;">
+    v1.2.6
+</div>
+
+<script src="script.js"></script>
+<script>
+// Apply mobile styles as soon as script loads
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof applyMobileStyles === 'function') {
+        applyMobileStyles();
+    }
+    // Also handle window resize for responsive changes
+    window.addEventListener('resize', function() {
+        if (typeof applyMobileStyles === 'function') {
+            applyMobileStyles();
+        }
+    });
+});
+
+function runFirebaseDiagnostics(){
+    const outEl = document.getElementById('diagOutput');
+    function out(msg){
+        console.log(msg);
+        if(outEl) outEl.innerText += msg + "\n";
+    }
+    if(outEl) outEl.innerText = '';
+    out('Iniciando diagnóstico de Firebase...');
+    if(!window.fbDb){ out('ERROR: Firebase DB no inicializada (window.fbDb false)'); return; }
+
+    // debug_test
+    window.fbDb.ref('debug_test').once('value')
+    .then(snap => out('debug_test: ' + JSON.stringify(snap.val())))
+    .catch(err => out('Lectura debug_test falló: ' + err));
+
+    // Leer posts 
+    window.fbDb.ref('posts').once('value')
+    .then(snap => {
+        const val = snap.val() || {};
+        const count = (typeof val === 'object') ? Object.keys(val).length : 0;
+        out('Posts count: ' + count);
+    })
+    .catch(err => out('Lectura posts falló: ' + err));
+
+    // Escritura de diagnóstico 
+    const path = 'diag_writes/' + Date.now();
+    window.fbDb.ref(path).set({ok:true, ts: Date.now()})
+    .then(() => out('Escritura de diagnóstico OK en: ' + path))
+    .catch(err => out('Escritura de diagnóstico falló: ' + err));
+}
+</script>
+
+</body>
+</html>
